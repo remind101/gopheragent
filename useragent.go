@@ -68,7 +68,11 @@ var mobilePlatforms []string
 
 // UserAgent provides methods for extracting UA details
 type UserAgent struct {
-	s string
+	s,
+	browser,
+	engine,
+	os,
+	platform string
 }
 
 // New returns a UserAgent for the given UA string
@@ -84,7 +88,11 @@ func New(ua string) *UserAgent {
 // BrowserName returns the name of the browser from the user agent
 func (ua *UserAgent) BrowserName() string {
 
-	return matchFirst(browsers, ua.s)
+	if ua.browser == "" {
+		ua.browser = matchFirst(browsers, ua.s)
+	}
+
+	return ua.browser
 
 }
 
@@ -106,7 +114,11 @@ func (ua *UserAgent) BrowserVersion() string {
 // Engine returns the rendering engine from the user agent
 func (ua *UserAgent) Engine() string {
 
-	return matchFirst(engines, ua.s)
+	if ua.engine == "" {
+		ua.engine = matchFirst(engines, ua.s)
+	}
+
+	return ua.engine
 
 }
 
@@ -131,14 +143,22 @@ func (ua *UserAgent) EngineVersion() string {
 // OS returns the operating system from the user agent
 func (ua *UserAgent) OS() string {
 
-	return matchFirst(oses, ua.s)
+	if ua.os == "" {
+		ua.os = matchFirst(oses, ua.s)
+	}
+
+	return ua.os
 
 }
 
 // Platform returns the platform from the user agent
 func (ua *UserAgent) Platform() string {
 
-	return matchFirst(platforms, ua.s)
+	if ua.platform == "" {
+		ua.platform = matchFirst(platforms, ua.s)
+	}
+
+	return ua.platform
 
 }
 
