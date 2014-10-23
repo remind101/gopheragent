@@ -196,11 +196,14 @@ func matchFirst(pp []*regexpTest, ua string) string {
 
 			// see if we need to expand the result
 			if test.Expand && len(m) > 1 {
-				substrings := make([]interface{}, len(m)-1)
-				for i := 1; i < len(m); i++ {
-					substrings[i-1] = interface{}(m[i])
+				submatches := m[1:]
+				args := make([]interface{}, len(submatches))
+
+				for i, v := range submatches {
+					args[i] = interface{}(v)
 				}
-				return fmt.Sprintf(test.Result, substrings...)
+
+				return fmt.Sprintf(test.Result, args...)
 			}
 
 			return test.Result
