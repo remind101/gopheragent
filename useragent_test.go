@@ -1,4 +1,4 @@
-package useragent_test
+package gopheragent_test
 
 import (
 	"testing"
@@ -133,7 +133,7 @@ func Test_UserAgent_Parse(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		var ua = useragent.New(test.UA)
+		var ua = gopheragent.New(test.UA)
 
 		// browser name
 		if got := ua.BrowserName(); got != test.BrowserName {

@@ -1,4 +1,4 @@
-package useragent
+package gopheragent
 
 import (
 	"fmt"
