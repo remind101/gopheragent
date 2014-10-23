@@ -62,7 +62,7 @@ type regexpTest struct {
 var browsers,
 	engines,
 	oses,
-	platforms []regexpTest
+	platforms []*regexpTest
 var browserVersions map[string]*regexp.Regexp
 var mobilePlatforms []string
 
@@ -169,7 +169,7 @@ func browserVersionRegexp(b string) (r *regexp.Regexp, err error) {
 	return r, err
 }
 
-func matchFirst(pp []regexpTest, ua string) string {
+func matchFirst(pp []*regexpTest, ua string) string {
 
 	for _, test := range pp {
 		if m := test.Pattern.FindStringSubmatch(ua); m != nil {
@@ -190,68 +190,36 @@ func matchFirst(pp []regexpTest, ua string) string {
 	return Unknown
 }
 
+func newRegexpTest(result, pattern string, expand bool) *regexpTest {
+	return &regexpTest{
+		Result:  result,
+		Pattern: regexp.MustCompile(pattern),
+		Expand:  expand,
+	}
+}
+
+func newSimpleTest(result, pattern string) *regexpTest {
+	return newRegexpTest(result, pattern, false)
+}
+
 func init() {
 
-	browsers = []regexpTest{
-		regexpTest{
-			Result:  Konqueror,
-			Pattern: regexp.MustCompile(`(?i:konqueror)`),
-		},
-		regexpTest{
-			Result:  Chrome,
-			Pattern: regexp.MustCompile(`(?i:chrome)`),
-		},
-		regexpTest{
-			Result:  Safari,
-			Pattern: regexp.MustCompile(`(?i:safari)`),
-		},
-		regexpTest{
-			Result:  IE,
-			Pattern: regexp.MustCompile(`(?i:msie)`)},
-		regexpTest{
-			Result:  Opera,
-			Pattern: regexp.MustCompile(`(?i:opera)`),
-		},
-		regexpTest{
-			Result:  PS3,
-			Pattern: regexp.MustCompile(`(?i:playstation 3)`),
-		},
-		regexpTest{
-			Result:  PSP,
-			Pattern: regexp.MustCompile(`(?i:playstation portable)`),
-		},
-		regexpTest{
-			Result:  Firefox,
-			Pattern: regexp.MustCompile(`(?i:firefox)`),
-		},
-		regexpTest{
-			Result:  Lotus,
-			Pattern: regexp.MustCompile(`(?i:lotus.notes)`),
-		},
-		regexpTest{
-			Result:  Netscape,
-			Pattern: regexp.MustCompile(`(?i:netscape)`),
-		},
-		regexpTest{
-			Result:  SeaMonkey,
-			Pattern: regexp.MustCompile(`(?i:seamonkey)`),
-		},
-		regexpTest{
-			Result:  Thunderbird,
-			Pattern: regexp.MustCompile(`(?i:thunderbird)`),
-		},
-		regexpTest{
-			Result:  Outlook,
-			Pattern: regexp.MustCompile(`(?i:microsoft.outlook)`),
-		},
-		regexpTest{
-			Result:  Evolution,
-			Pattern: regexp.MustCompile(`(?i:evolution)`),
-		},
-		regexpTest{
-			Result:  IEMobile,
-			Pattern: regexp.MustCompile(`(?i:iemobile|windows phone)`),
-		},
+	browsers = []*regexpTest{
+		newSimpleTest(Konqueror, `(?i:konqueror)`),
+		newSimpleTest(Chrome, `(?i:chrome)`),
+		newSimpleTest(Safari, `(?i:safari)`),
+		newSimpleTest(IE, `(?i:msie)`),
+		newSimpleTest(Opera, `(?i:opera)`),
+		newSimpleTest(PS3, `(?i:playstation 3)`),
+		newSimpleTest(PSP, `(?i:playstation portable)`),
+		newSimpleTest(Firefox, `(?i:firefox)`),
+		newSimpleTest(Lotus, `(?i:lotus.notes)`),
+		newSimpleTest(Netscape, `(?i:netscape)`),
+		newSimpleTest(SeaMonkey, `(?i:seamonkey)`),
+		newSimpleTest(Thunderbird, `(?i:thunderbird)`),
+		newSimpleTest(Outlook, `(?i:microsoft.outlook)`),
+		newSimpleTest(Evolution, `(?i:evolution)`),
+		newSimpleTest(IEMobile, `(?i:iemobile|windows phone)`),
 	}
 
 	browserVersions = map[string]*regexp.Regexp{
@@ -262,157 +230,48 @@ func init() {
 		Lotus:  regexp.MustCompile(`(?i:Lotus-Notes\/([\w.]+))`),
 	}
 
-	engines = []regexpTest{
-		regexpTest{
-			Result:  Webkit,
-			Pattern: regexp.MustCompile(`(?i:webkit)`),
-		},
-
-		regexpTest{
-			Result:  Khtml,
-			Pattern: regexp.MustCompile(`(?i:khtml)`),
-		},
-		regexpTest{
-			Result:  Konqueror,
-			Pattern: regexp.MustCompile(`(?i:konqueror)`),
-		},
-		regexpTest{
-			Result:  Chrome,
-			Pattern: regexp.MustCompile(`(?i:chrome)`),
-		},
-		regexpTest{
-			Result:  Presto,
-			Pattern: regexp.MustCompile(`(?i:presto)`),
-		},
-		regexpTest{
-			Result:  Gecko,
-			Pattern: regexp.MustCompile(`(?i:gecko)`),
-		},
-		regexpTest{
-			Result:  Unknown,
-			Pattern: regexp.MustCompile(`(?i:opera)`),
-		},
-		regexpTest{
-			Result:  Msie,
-			Pattern: regexp.MustCompile(`(?i:msie)`),
-		},
+	engines = []*regexpTest{
+		newSimpleTest(Webkit, `(?i:webkit)`),
+		newSimpleTest(Khtml, `(?i:khtml)`),
+		newSimpleTest(Konqueror, `(?i:konqueror)`),
+		newSimpleTest(Chrome, `(?i:chrome)`),
+		newSimpleTest(Presto, `(?i:presto)`),
+		newSimpleTest(Gecko, `(?i:gecko)`),
+		newSimpleTest(Unknown, `(?i:opera)`),
+		newSimpleTest(Msie, `(?i:msie)`),
 	}
 
-	oses = []regexpTest{
-		regexpTest{
-			Result:  "Windows Phone",
-			Pattern: regexp.MustCompile(`(?i:windows (ce|phone|mobile)( os)?)`),
-		},
-		regexpTest{
-			Result:  "Windows Vista",
-			Pattern: regexp.MustCompile(`(?i:windows nt 6\.0)`),
-		},
-		regexpTest{
-			Result:  "Windows 7",
-			Pattern: regexp.MustCompile(`(?i:windows nt 6\.\d+)`),
-		},
-		regexpTest{
-			Result:  "Windows 2003",
-			Pattern: regexp.MustCompile(`(?i:windows nt 5\.2)`),
-		},
-		regexpTest{
-			Result:  "Windows XP",
-			Pattern: regexp.MustCompile(`(?i:windows nt 5\.1)`),
-		},
-		regexpTest{
-			Result:  "Windows 2000",
-			Pattern: regexp.MustCompile(`(?i:windows nt 5\.0)`),
-		},
-		regexpTest{
-			Result:  "Windows",
-			Pattern: regexp.MustCompile(`(?i:windows)`),
-		},
-		regexpTest{
-			Result:  "OS X %s.%s",
-			Pattern: regexp.MustCompile(`(?i:os x (\d+)[._](\d+))`),
-			Expand:  true,
-		},
-		regexpTest{
-			Result:  "Linux",
-			Pattern: regexp.MustCompile(`(?i:linux)`),
-		},
-		regexpTest{
-			Result:  "Wii",
-			Pattern: regexp.MustCompile(`(?i:wii)`),
-		},
-		regexpTest{
-			Result:  "Playstation",
-			Pattern: regexp.MustCompile(`(?i:playstation 3)`),
-		},
-		regexpTest{
-			Result:  "Playstation",
-			Pattern: regexp.MustCompile(`(?i:playstation portable)`),
-		},
-		regexpTest{
-			Result:  "iPad OS %s.%s",
-			Pattern: regexp.MustCompile(`(?i:\(iPad.*os (\d+)[._](\d+))`),
-			Expand:  true,
-		},
-		regexpTest{
-			Result:  "iPhone OS %s.%s",
-			Pattern: regexp.MustCompile(`(?i:\(iPhone.*os (\d+)[._](\d+))`),
-			Expand:  true,
-		},
-		regexpTest{
-			Result:  "Symbian OS",
-			Pattern: regexp.MustCompile(`(?i:symbian(os)?)`),
-		},
+	oses = []*regexpTest{
+		newSimpleTest("Windows Phone", `(?i:windows (ce|phone|mobile)( os)?)`),
+		newSimpleTest("Windows Vista", `(?i:windows nt 6\.0)`),
+		newSimpleTest("Windows 7", `(?i:windows nt 6\.\d+)`),
+		newSimpleTest("Windows 2003", `(?i:windows nt 5\.2)`),
+		newSimpleTest("Windows XP", `(?i:windows nt 5\.1)`),
+		newSimpleTest("Windows 2000", `(?i:windows nt 5\.0)`),
+		newSimpleTest("Windows", `(?i:windows)`),
+		newRegexpTest("OS X %s.%s", `(?i:os x (\d+)[._](\d+))`, true),
+		newSimpleTest("Linux", `(?i:linux)`),
+		newSimpleTest("Wii", `(?i:wii)`),
+		newSimpleTest("Playstation", `(?i:playstation 3)`),
+		newSimpleTest("Playstation", `(?i:playstation portable)`),
+		newRegexpTest("iPad OS %s.%s", `(?i:\(iPad.*os (\d+)[._](\d+))`, true),
+		newRegexpTest("iPhone OS %s.%s", `(?i:\(iPhone.*os (\d+)[._](\d+))`, true),
+		newSimpleTest("Symbian OS", `(?i:symbian(os)?)`),
 	}
 
-	platforms = []regexpTest{
-		regexpTest{
-			Result:  WindowsPhone,
-			Pattern: regexp.MustCompile(`(?i:windows (ce|phone|mobile)( os)?)`),
-		},
-		regexpTest{
-			Result:  Windows,
-			Pattern: regexp.MustCompile(`(?i:windows)`),
-		},
-		regexpTest{
-			Result:  Mac,
-			Pattern: regexp.MustCompile(`(?i:macintosh)`),
-		},
-		regexpTest{
-			Result:  Android,
-			Pattern: regexp.MustCompile(`(?i:android)`),
-		},
-		regexpTest{
-			Result:  Blackberry,
-			Pattern: regexp.MustCompile(`(?i:blackberry)`),
-		},
-		regexpTest{
-			Result:  Linux,
-			Pattern: regexp.MustCompile(`(?i:linux)`),
-		},
-		regexpTest{
-			Result:  Wii,
-			Pattern: regexp.MustCompile(`(?i:wii)`),
-		},
-		regexpTest{
-			Result:  Playstation,
-			Pattern: regexp.MustCompile(`(?i:playstation)`),
-		},
-		regexpTest{
-			Result:  Ipad,
-			Pattern: regexp.MustCompile(`(?i:ipad)`),
-		},
-		regexpTest{
-			Result:  Ipod,
-			Pattern: regexp.MustCompile(`(?i:ipod)`),
-		},
-		regexpTest{
-			Result:  Iphone,
-			Pattern: regexp.MustCompile(`(?i:iphone)`),
-		},
-		regexpTest{
-			Result:  Symbian,
-			Pattern: regexp.MustCompile(`(?i:symbian(os)?)`),
-		},
+	platforms = []*regexpTest{
+		newSimpleTest(WindowsPhone, `(?i:windows (ce|phone|mobile)( os)?)`),
+		newSimpleTest(Windows, `(?i:windows)`),
+		newSimpleTest(Mac, `(?i:macintosh)`),
+		newSimpleTest(Android, `(?i:android)`),
+		newSimpleTest(Blackberry, `(?i:blackberry)`),
+		newSimpleTest(Linux, `(?i:linux)`),
+		newSimpleTest(Wii, `(?i:wii)`),
+		newSimpleTest(Playstation, `(?i:playstation)`),
+		newSimpleTest(Ipad, `(?i:ipad)`),
+		newSimpleTest(Ipod, `(?i:ipod)`),
+		newSimpleTest(Iphone, `(?i:iphone)`),
+		newSimpleTest(Symbian, `(?i:symbian(os)?)`),
 	}
 
 	mobilePlatforms = []string{
