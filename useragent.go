@@ -236,7 +236,6 @@ func init() {
 			newSimpleTest(Konqueror, `(?i:konqueror)`),
 			newSimpleTest(Chrome, `(?i:chrome)`),
 			newSimpleTest(Safari, `(?i:safari)`),
-			newSimpleTest(IE, `(?i:msie)`),
 			newSimpleTest(Opera, `(?i:opera)`),
 			newSimpleTest(PS3, `(?i:playstation 3)`),
 			newSimpleTest(PSP, `(?i:playstation portable)`),
@@ -248,6 +247,7 @@ func init() {
 			newSimpleTest(Outlook, `(?i:microsoft.outlook)`),
 			newSimpleTest(Evolution, `(?i:evolution)`),
 			newSimpleTest(IEMobile, `(?i:iemobile|windows phone)`),
+			newSimpleTest(IE, `(?i:msie)`),
 		},
 		fallback: Unknown,
 	}
