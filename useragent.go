@@ -186,7 +186,7 @@ func browserVersionRegexp(b string) (r *regexp.Regexp, err error) {
 	r, ok := browserVersions[b]
 	if !ok {
 		r, err = regexp.Compile(
-			`(?i:` + b + `[\/ ]([\d\w\.\-]+)`,
+			`(?i:` + b + `[\/ ]([\d\w\.\-]+))`,
 		)
 	}
 
