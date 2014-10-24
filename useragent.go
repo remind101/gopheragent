@@ -58,11 +58,15 @@ type regexpTest struct {
 	Pattern *regexp.Regexp
 	Expand  bool
 }
+type regexpTestChain struct {
+	tests    []*regexpTest
+	fallback string
+}
 
 var browsers,
 	engines,
 	oses,
-	platforms []*regexpTest
+	platforms regexpTestChain
 var browserVersions map[string]*regexp.Regexp
 var mobilePlatforms []string
 
@@ -182,16 +186,16 @@ func browserVersionRegexp(b string) (r *regexp.Regexp, err error) {
 	r, ok := browserVersions[b]
 	if !ok {
 		r, err = regexp.Compile(
-			`(?i:` + b + `[\/ ]([\d\w\.\-]+)`,
+			`(?i:` + b + `[\/ ]([\d\w\.\-]+))`,
 		)
 	}
 
 	return r, err
 }
 
-func matchFirst(pp []*regexpTest, ua string) string {
+func matchFirst(tt regexpTestChain, ua string) string {
 
-	for _, test := range pp {
+	for _, test := range tt.tests {
 		if m := test.Pattern.FindStringSubmatch(ua); m != nil {
 
 			// see if we need to expand the result
@@ -210,7 +214,7 @@ func matchFirst(pp []*regexpTest, ua string) string {
 		}
 	}
 
-	return Unknown
+	return tt.fallback
 }
 
 func newRegexpTest(result, pattern string, expand bool) *regexpTest {
@@ -227,22 +231,25 @@ func newSimpleTest(result, pattern string) *regexpTest {
 
 func init() {
 
-	browsers = []*regexpTest{
-		newSimpleTest(Konqueror, `(?i:konqueror)`),
-		newSimpleTest(Chrome, `(?i:chrome)`),
-		newSimpleTest(Safari, `(?i:safari)`),
-		newSimpleTest(IE, `(?i:msie)`),
-		newSimpleTest(Opera, `(?i:opera)`),
-		newSimpleTest(PS3, `(?i:playstation 3)`),
-		newSimpleTest(PSP, `(?i:playstation portable)`),
-		newSimpleTest(Firefox, `(?i:firefox)`),
-		newSimpleTest(Lotus, `(?i:lotus.notes)`),
-		newSimpleTest(Netscape, `(?i:netscape)`),
-		newSimpleTest(SeaMonkey, `(?i:seamonkey)`),
-		newSimpleTest(Thunderbird, `(?i:thunderbird)`),
-		newSimpleTest(Outlook, `(?i:microsoft.outlook)`),
-		newSimpleTest(Evolution, `(?i:evolution)`),
-		newSimpleTest(IEMobile, `(?i:iemobile|windows phone)`),
+	browsers = regexpTestChain{
+		tests: []*regexpTest{
+			newSimpleTest(Konqueror, `(?i:konqueror)`),
+			newSimpleTest(Chrome, `(?i:chrome)`),
+			newSimpleTest(Safari, `(?i:safari)`),
+			newSimpleTest(Opera, `(?i:opera)`),
+			newSimpleTest(PS3, `(?i:playstation 3)`),
+			newSimpleTest(PSP, `(?i:playstation portable)`),
+			newSimpleTest(Firefox, `(?i:firefox)`),
+			newSimpleTest(Lotus, `(?i:lotus.notes)`),
+			newSimpleTest(Netscape, `(?i:netscape)`),
+			newSimpleTest(SeaMonkey, `(?i:seamonkey)`),
+			newSimpleTest(Thunderbird, `(?i:thunderbird)`),
+			newSimpleTest(Outlook, `(?i:microsoft.outlook)`),
+			newSimpleTest(Evolution, `(?i:evolution)`),
+			newSimpleTest(IEMobile, `(?i:iemobile|windows phone)`),
+			newSimpleTest(IE, `(?i:msie)`),
+		},
+		fallback: Unknown,
 	}
 
 	browserVersions = map[string]*regexp.Regexp{
@@ -253,48 +260,57 @@ func init() {
 		Lotus:  regexp.MustCompile(`(?i:Lotus-Notes\/([\w.]+))`),
 	}
 
-	engines = []*regexpTest{
-		newSimpleTest(Webkit, `(?i:webkit)`),
-		newSimpleTest(Khtml, `(?i:khtml)`),
-		newSimpleTest(Konqueror, `(?i:konqueror)`),
-		newSimpleTest(Chrome, `(?i:chrome)`),
-		newSimpleTest(Presto, `(?i:presto)`),
-		newSimpleTest(Gecko, `(?i:gecko)`),
-		newSimpleTest(Unknown, `(?i:opera)`),
-		newSimpleTest(Msie, `(?i:msie)`),
+	engines = regexpTestChain{
+		tests: []*regexpTest{
+			newSimpleTest(Webkit, `(?i:webkit)`),
+			newSimpleTest(Khtml, `(?i:khtml)`),
+			newSimpleTest(Konqueror, `(?i:konqueror)`),
+			newSimpleTest(Chrome, `(?i:chrome)`),
+			newSimpleTest(Presto, `(?i:presto)`),
+			newSimpleTest(Gecko, `(?i:gecko)`),
+			newSimpleTest(Unknown, `(?i:opera)`),
+			newSimpleTest(Msie, `(?i:msie)`),
+		},
+		fallback: Unknown,
 	}
 
-	oses = []*regexpTest{
-		newSimpleTest("Windows Phone", `(?i:windows (ce|phone|mobile)( os)?)`),
-		newSimpleTest("Windows Vista", `(?i:windows nt 6\.0)`),
-		newSimpleTest("Windows 7", `(?i:windows nt 6\.\d+)`),
-		newSimpleTest("Windows 2003", `(?i:windows nt 5\.2)`),
-		newSimpleTest("Windows XP", `(?i:windows nt 5\.1)`),
-		newSimpleTest("Windows 2000", `(?i:windows nt 5\.0)`),
-		newSimpleTest("Windows", `(?i:windows)`),
-		newRegexpTest("OS X %s.%s", `(?i:os x (\d+)[._](\d+))`, true),
-		newSimpleTest("Linux", `(?i:linux)`),
-		newSimpleTest("Wii", `(?i:wii)`),
-		newSimpleTest("Playstation", `(?i:playstation 3)`),
-		newSimpleTest("Playstation", `(?i:playstation portable)`),
-		newRegexpTest("iPad OS %s.%s", `(?i:\(iPad.*os (\d+)[._](\d+))`, true),
-		newRegexpTest("iPhone OS %s.%s", `(?i:\(iPhone.*os (\d+)[._](\d+))`, true),
-		newSimpleTest("Symbian OS", `(?i:symbian(os)?)`),
+	oses = regexpTestChain{
+		tests: []*regexpTest{
+			newSimpleTest("Windows Phone", `(?i:windows (ce|phone|mobile)( os)?)`),
+			newSimpleTest("Windows Vista", `(?i:windows nt 6\.0)`),
+			newSimpleTest("Windows 7", `(?i:windows nt 6\.\d+)`),
+			newSimpleTest("Windows 2003", `(?i:windows nt 5\.2)`),
+			newSimpleTest("Windows XP", `(?i:windows nt 5\.1)`),
+			newSimpleTest("Windows 2000", `(?i:windows nt 5\.0)`),
+			newSimpleTest("Windows", `(?i:windows)`),
+			newRegexpTest("OS X %s.%s", `(?i:os x (\d+)[._](\d+))`, true),
+			newSimpleTest("Linux", `(?i:linux)`),
+			newSimpleTest("Wii", `(?i:wii)`),
+			newSimpleTest("Playstation", `(?i:playstation 3)`),
+			newSimpleTest("Playstation", `(?i:playstation portable)`),
+			newRegexpTest("iPad OS %s.%s", `(?i:\(iPad.*os (\d+)[._](\d+))`, true),
+			newRegexpTest("iPhone OS %s.%s", `(?i:\(iPhone.*os (\d+)[._](\d+))`, true),
+			newSimpleTest("Symbian OS", `(?i:symbian(os)?)`),
+		},
+		fallback: "Unknown",
 	}
 
-	platforms = []*regexpTest{
-		newSimpleTest(WindowsPhone, `(?i:windows (ce|phone|mobile)( os)?)`),
-		newSimpleTest(Windows, `(?i:windows)`),
-		newSimpleTest(Mac, `(?i:macintosh)`),
-		newSimpleTest(Android, `(?i:android)`),
-		newSimpleTest(Blackberry, `(?i:blackberry)`),
-		newSimpleTest(Linux, `(?i:linux)`),
-		newSimpleTest(Wii, `(?i:wii)`),
-		newSimpleTest(Playstation, `(?i:playstation)`),
-		newSimpleTest(Ipad, `(?i:ipad)`),
-		newSimpleTest(Ipod, `(?i:ipod)`),
-		newSimpleTest(Iphone, `(?i:iphone)`),
-		newSimpleTest(Symbian, `(?i:symbian(os)?)`),
+	platforms = regexpTestChain{
+		tests: []*regexpTest{
+			newSimpleTest(WindowsPhone, `(?i:windows (ce|phone|mobile)( os)?)`),
+			newSimpleTest(Windows, `(?i:windows)`),
+			newSimpleTest(Mac, `(?i:macintosh)`),
+			newSimpleTest(Android, `(?i:android)`),
+			newSimpleTest(Blackberry, `(?i:blackberry)`),
+			newSimpleTest(Linux, `(?i:linux)`),
+			newSimpleTest(Wii, `(?i:wii)`),
+			newSimpleTest(Playstation, `(?i:playstation)`),
+			newSimpleTest(Ipad, `(?i:ipad)`),
+			newSimpleTest(Ipod, `(?i:ipod)`),
+			newSimpleTest(Iphone, `(?i:iphone)`),
+			newSimpleTest(Symbian, `(?i:symbian(os)?)`),
+		},
+		fallback: Unknown,
 	}
 
 	mobilePlatforms = []string{
