@@ -234,6 +234,7 @@ func init() {
 
 	browsers = regexpTestChain{
 		tests: []*regexpTest{
+			newSimpleTest(Electron, `(?i:electron)`),
 			newSimpleTest(Konqueror, `(?i:konqueror)`),
 			newSimpleTest(Chrome, `(?i:chrome)`),
 			newSimpleTest(Safari, `(?i:safari)`),
@@ -254,11 +255,12 @@ func init() {
 	}
 
 	browserVersions = map[string]*regexp.Regexp{
-		Chrome: regexp.MustCompile(`(?i:chrome\/([\d\w\.\-]+))`),
-		Safari: regexp.MustCompile(`(?i:version\/([\d\w\.\-]+))`),
-		PS3:    regexp.MustCompile(`(?i:([\d\w\.\-]+)\)\s*$)`),
-		PSP:    regexp.MustCompile(`(?i:([\d\w\.\-]+)\)?\s*$)`),
-		Lotus:  regexp.MustCompile(`(?i:Lotus-Notes\/([\w.]+))`),
+		Electron: regexp.MustCompile(`(?i:electron\/([\d\w\.\-]+))`),
+		Chrome:   regexp.MustCompile(`(?i:chrome\/([\d\w\.\-]+))`),
+		Safari:   regexp.MustCompile(`(?i:version\/([\d\w\.\-]+))`),
+		PS3:      regexp.MustCompile(`(?i:([\d\w\.\-]+)\)\s*$)`),
+		PSP:      regexp.MustCompile(`(?i:([\d\w\.\-]+)\)?\s*$)`),
+		Lotus:    regexp.MustCompile(`(?i:Lotus-Notes\/([\w.]+))`),
 	}
 
 	engines = regexpTestChain{
