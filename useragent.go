@@ -8,6 +8,7 @@ import (
 
 // Browsers
 const (
+	Electron    = "desktop"
 	Konqueror   = "konqueror"
 	Chrome      = "chrome"
 	Safari      = "safari"

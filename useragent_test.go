@@ -95,6 +95,17 @@ func init() {
 	testCases = []UserAgentTestCase{
 
 		UserAgentTestCase{
+			UA:             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Remind(BETA)Dev/0.3.1 Chrome/45.0.2454.85 Electron/0.34.2 Safari/537.36"
+			BrowserName:    "desktop",
+			BrowserVersion: "45.0.2454.85",
+			Engine:         "webkit",
+			EngineVersion:  "537.36",
+			OS:             "OS X 10.11"",
+			Platform:       "macintosh",
+			Mobile:         false,
+		},
+
+		UserAgentTestCase{
 			UA:             "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.143 Safari/537.36",
 			BrowserName:    "chrome",
 			BrowserVersion: "36.0.1985.143",
