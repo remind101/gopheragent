@@ -9,19 +9,10 @@ import (
 // Browsers
 const (
 	Electron    = "desktop"
-	Konqueror   = "konqueror"
 	Chrome      = "chrome"
 	Safari      = "safari"
 	Opera       = "opera"
-	PS3         = "ps3"
-	PSP         = "psp"
 	Firefox     = "firefox"
-	Lotus       = "lotus"
-	Netscape    = "netscape"
-	SeaMonkey   = "seamonkey"
-	Thunderbird = "thunderbird"
-	Outlook     = "outlook"
-	Evolution   = "evolution"
 	IEMobile    = "iemobile"
 	IE          = "ie"
 )
@@ -29,7 +20,6 @@ const (
 // Engines
 const (
 	Webkit = "webkit"
-	Khtml  = "khtml"
 	Presto = "presto"
 	Gecko  = "gecko"
 	Msie   = "msie"
@@ -40,19 +30,19 @@ const (
 	Windows      = "windows"
 	Mac          = "macintosh"
 	Linux        = "linux"
-	Wii          = "wii"
-	Playstation  = "playstation"
 	Ipad         = "ipad"
 	Ipod         = "ipod"
 	Iphone       = "iphone"
 	Android      = "android"
 	Blackberry   = "blackberry"
 	WindowsPhone = "windows_phone"
-	Symbian      = "symbian"
 )
 
 // Unknown is returned when a result cannot be extracted
 const Unknown = "unknown"
+
+// Our apps send user-agent strings that start with this.
+const RemindPrefix = "Remind"
 
 type regexpTest struct {
 	Result  string
@@ -67,6 +57,8 @@ type regexpTestChain struct {
 var browsers,
 	engines,
 	oses,
+	iosBrowsers,
+	iosEngines,
 	platforms regexpTestChain
 var browserVersions map[string]*regexp.Regexp
 var mobilePlatforms []string
@@ -94,7 +86,14 @@ func New(ua string) *UserAgent {
 func (ua *UserAgent) BrowserName() string {
 
 	if ua.browser == "" {
-		ua.browser = matchFirst(browsers, ua.s)
+		if ua.IsRemind() {
+			ua.engine = Unknown
+			ua.browser = Unknown
+		} else if ua.IsIos() {
+			ua.browser = matchFirst(iosBrowsers, ua.s)
+		} else {
+			ua.browser = matchFirst(browsers, ua.s)
+		}
 	}
 
 	return ua.browser
@@ -120,7 +119,14 @@ func (ua *UserAgent) BrowserVersion() string {
 func (ua *UserAgent) Engine() string {
 
 	if ua.engine == "" {
-		ua.engine = matchFirst(engines, ua.s)
+		if ua.IsRemind() {
+			ua.engine = Unknown
+			ua.browser = Unknown
+		} else if ua.IsIos() {
+			ua.engine = matchFirst(iosEngines, ua.s)
+		} else {
+			ua.engine = matchFirst(engines, ua.s)
+		}
 	}
 
 	return ua.engine
@@ -167,6 +173,15 @@ func (ua *UserAgent) Platform() string {
 
 }
 
+func (ua *UserAgent) IsIos() bool {
+	platform := ua.Platform()
+	return platform == Iphone || platform == Ipad || platform == Ipod
+}
+
+func (ua *UserAgent) IsRemind() bool {
+	return strings.HasPrefix(ua.s, RemindPrefix)
+}
+
 // Mobile returns true if the user agent represents a mobile client
 func (ua *UserAgent) Mobile() bool {
 
@@ -178,7 +193,7 @@ func (ua *UserAgent) Mobile() bool {
 		}
 	}
 
-	return ua.BrowserName() == PSP
+	return false
 
 }
 
@@ -197,20 +212,25 @@ func browserVersionRegexp(b string) (r *regexp.Regexp, err error) {
 func matchFirst(tt regexpTestChain, ua string) string {
 
 	for _, test := range tt.tests {
-		if m := test.Pattern.FindStringSubmatch(ua); m != nil {
+		if test.Expand {
+			if m := test.Pattern.FindStringSubmatch(ua); m != nil {
 
-			// see if we need to expand the result
-			if test.Expand && len(m) > 1 {
-				submatches := m[1:]
-				args := make([]interface{}, len(submatches))
+				// see if we need to expand the result
+				if len(m) > 1 {
+					submatches := m[1:]
+					args := make([]interface{}, len(submatches))
 
-				for i, v := range submatches {
-					args[i] = interface{}(v)
+					for i, v := range submatches {
+						args[i] = interface{}(v)
+					}
+
+					return fmt.Sprintf(test.Result, args...)
+				} else {
+					return test.Result
 				}
-
-				return fmt.Sprintf(test.Result, args...)
 			}
 
+		} else if test.Pattern.MatchString(ua) {
 			return test.Result
 		}
 	}
@@ -235,21 +255,19 @@ func init() {
 	browsers = regexpTestChain{
 		tests: []*regexpTest{
 			newSimpleTest(Electron, `(?i:electron)`),
-			newSimpleTest(Konqueror, `(?i:konqueror)`),
 			newSimpleTest(Chrome, `(?i:chrome)`),
 			newSimpleTest(Safari, `(?i:safari)`),
 			newSimpleTest(Opera, `(?i:opera)`),
-			newSimpleTest(PS3, `(?i:playstation 3)`),
-			newSimpleTest(PSP, `(?i:playstation portable)`),
 			newSimpleTest(Firefox, `(?i:firefox)`),
-			newSimpleTest(Lotus, `(?i:lotus.notes)`),
-			newSimpleTest(Netscape, `(?i:netscape)`),
-			newSimpleTest(SeaMonkey, `(?i:seamonkey)`),
-			newSimpleTest(Thunderbird, `(?i:thunderbird)`),
-			newSimpleTest(Outlook, `(?i:microsoft.outlook)`),
-			newSimpleTest(Evolution, `(?i:evolution)`),
 			newSimpleTest(IEMobile, `(?i:iemobile|windows phone)`),
 			newSimpleTest(IE, `(?i:msie)`),
+		},
+		fallback: Unknown,
+	}
+
+	iosBrowsers = regexpTestChain{
+		tests: []*regexpTest{
+			newSimpleTest(Safari, `(?i:safari)`),
 		},
 		fallback: Unknown,
 	}
@@ -258,27 +276,31 @@ func init() {
 		Electron: regexp.MustCompile(`(?i:electron\/([\d\w\.\-]+))`),
 		Chrome:   regexp.MustCompile(`(?i:chrome\/([\d\w\.\-]+))`),
 		Safari:   regexp.MustCompile(`(?i:version\/([\d\w\.\-]+))`),
-		PS3:      regexp.MustCompile(`(?i:([\d\w\.\-]+)\)\s*$)`),
-		PSP:      regexp.MustCompile(`(?i:([\d\w\.\-]+)\)?\s*$)`),
-		Lotus:    regexp.MustCompile(`(?i:Lotus-Notes\/([\w.]+))`),
 	}
 
 	engines = regexpTestChain{
 		tests: []*regexpTest{
 			newSimpleTest(Webkit, `(?i:webkit)`),
-			newSimpleTest(Khtml, `(?i:khtml)`),
-			newSimpleTest(Konqueror, `(?i:konqueror)`),
 			newSimpleTest(Chrome, `(?i:chrome)`),
-			newSimpleTest(Presto, `(?i:presto)`),
 			newSimpleTest(Gecko, `(?i:gecko)`),
-			newSimpleTest(Unknown, `(?i:opera)`),
 			newSimpleTest(Msie, `(?i:msie)`),
+			newSimpleTest(Presto, `(?i:presto)`),
+			newSimpleTest(Opera, `(?i:opera)`),
+		},
+		fallback: Unknown,
+	}
+
+	iosEngines = regexpTestChain{
+		tests: []*regexpTest{
+			newSimpleTest(Webkit, `(?i:webkit)`),
 		},
 		fallback: Unknown,
 	}
 
 	oses = regexpTestChain{
 		tests: []*regexpTest{
+			newRegexpTest("iPad OS %s.%s", `(?i:\(iPad.*os (\d+)[._](\d+))`, true),
+			newRegexpTest("iPhone OS %s.%s", `(?i:\(iPhone.*os (\d+)[._](\d+))`, true),
 			newSimpleTest("Windows Phone", `(?i:windows (ce|phone|mobile)( os)?)`),
 			newSimpleTest("Windows Vista", `(?i:windows nt 6\.0)`),
 			newSimpleTest("Windows 7", `(?i:windows nt 6\.\d+)`),
@@ -288,30 +310,21 @@ func init() {
 			newSimpleTest("Windows", `(?i:windows)`),
 			newRegexpTest("OS X %s.%s", `(?i:os x (\d+)[._](\d+))`, true),
 			newSimpleTest("Linux", `(?i:linux)`),
-			newSimpleTest("Wii", `(?i:wii)`),
-			newSimpleTest("Playstation", `(?i:playstation 3)`),
-			newSimpleTest("Playstation", `(?i:playstation portable)`),
-			newRegexpTest("iPad OS %s.%s", `(?i:\(iPad.*os (\d+)[._](\d+))`, true),
-			newRegexpTest("iPhone OS %s.%s", `(?i:\(iPhone.*os (\d+)[._](\d+))`, true),
-			newSimpleTest("Symbian OS", `(?i:symbian(os)?)`),
 		},
 		fallback: "Unknown",
 	}
 
 	platforms = regexpTestChain{
 		tests: []*regexpTest{
+			newSimpleTest(Ipad, `(?i:ipad)`),
+			newSimpleTest(Ipod, `(?i:ipod)`),
+			newSimpleTest(Iphone, `(?i:iphone)`),
 			newSimpleTest(WindowsPhone, `(?i:windows (ce|phone|mobile)( os)?)`),
 			newSimpleTest(Windows, `(?i:windows)`),
 			newSimpleTest(Mac, `(?i:macintosh)`),
 			newSimpleTest(Android, `(?i:android)`),
-			newSimpleTest(Blackberry, `(?i:blackberry)`),
 			newSimpleTest(Linux, `(?i:linux)`),
-			newSimpleTest(Wii, `(?i:wii)`),
-			newSimpleTest(Playstation, `(?i:playstation)`),
-			newSimpleTest(Ipad, `(?i:ipad)`),
-			newSimpleTest(Ipod, `(?i:ipod)`),
-			newSimpleTest(Iphone, `(?i:iphone)`),
-			newSimpleTest(Symbian, `(?i:symbian(os)?)`),
+			newSimpleTest(Blackberry, `(?i:blackberry)`),
 		},
 		fallback: Unknown,
 	}
@@ -322,7 +335,6 @@ func init() {
 		Ipad,
 		Ipod,
 		Iphone,
-		Symbian,
 		WindowsPhone,
 	}
 }
